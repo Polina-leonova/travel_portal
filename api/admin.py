@@ -19,7 +19,7 @@ class ServiceAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'service', 'promo_code', 'is_paid')
+    list_display = ('id', 'user', 'promo_code', 'is_paid')
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
