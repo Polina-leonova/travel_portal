@@ -15,15 +15,21 @@ class OrganizationSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'gender', 'age', 'country', 'city', 'email', 'phone', 'role']
-        read_only_fields = ['role']
+        fields = ['id', 'username', 'first_name', 'last_name', 'gender', 'age', 'country', 'city', 'email', 'phone', 'role', 'is_staff']
+        read_only_fields = ['role', 'is_staff']
 
 class OrderSerializer(serializers.ModelSerializer):
-    service_details = ServiceSerializer(source='service', read_only=True)
+    service_details = ServiceSerializer(source='services', many=True, read_only=True)
+
     class Meta:
         model = Order
-        fields = ['id', 'user', 'service', 'service_details', 'created_at', 'is_paid', 'promo_code']
+        fields = ['id', 'user', 'services', 'service_details', 'created_at', 'is_paid', 'promo_code']
         read_only_fields = ['user', 'promo_code', 'is_paid']
+
+    def validate_services(self, value):
+        if len(value) > 5:
+            raise serializers.ValidationError("В один заказ нельзя добавить больше 5 услуг.")
+        return value
 
 # Для админки: статистика
 class AdminStatSerializer(serializers.Serializer):
