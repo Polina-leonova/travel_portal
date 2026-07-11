@@ -61,7 +61,7 @@ class Service(models.Model):
 # 4. Заказы (Корзина и оплаченные услуги)
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
-    service = models.ForeignKey(Service, on_delete=models.SET_NULL, null=True)
+    services = models.ManyToManyField(Service, verbose_name="Услуги")
     created_at = models.DateTimeField(auto_now_add=True)
     is_paid = models.BooleanField("Оплачено (10% платформе)", default=False)
     promo_code = models.CharField("Промокод для скидки", max_length=10, unique=True, blank=True)
