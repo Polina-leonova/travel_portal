@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import User, Organization, Service, Order
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 # Класс для отображения услуг внутри организации
 class ServiceInline(admin.TabularInline):
@@ -23,5 +24,11 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'role', 'is_staff', 'is_superuser', 'city')
-    list_filter = ('role', 'is_staff', 'is_superuser')
+    list_display = ('username', 'role', 'city', 'is_staff')
+    
+    fieldsets = BaseUserAdmin.fieldsets + (
+        ('Дополнительная информация', {'fields': ('role', 'phone', 'age', 'gender', 'country', 'city')}),
+    )
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        ('Дополнительная информация', {'fields': ('role', 'phone', 'age', 'gender', 'country', 'city')}),
+    )
