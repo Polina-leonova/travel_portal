@@ -32,7 +32,12 @@ class Organization(models.Model):
     name = models.CharField("Название", max_length=255)
     description = models.TextField("Описание", blank=True)
     org_type = models.CharField("Тип", max_length=20, choices=ORG_TYPES)
+
+    amenities = models.TextField("Удобства и услуги (для отелей)", blank=True)
+    map_link = models.TextField("Ссылка на карту или координаты", blank=True)
     
+    # Поле для отзывов (пока просто строка или можно оставить на будущее)
+    reviews_count = models.PositiveIntegerField("Кол-во отзывов", default=0)
     # География 
     federal_district = models.CharField("Федеральный округ", max_length=100)
     region = models.CharField("Область/Республика", max_length=100)
