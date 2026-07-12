@@ -146,3 +146,6 @@ from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1), # Для разработки сделаем подольше
 }
+
+LOGIN_REDIRECT_URL = '/api/profile/'
+LOGOUT_REDIRECT_URL = '/api-auth/login/'
