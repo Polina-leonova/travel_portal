@@ -44,10 +44,10 @@ class AdminStatsView(generics.ListAPIView):
     serializer_class = AdminStatSerializer
 
     def get_queryset(self):
-        # Группируем заказы по организациям и считаем суммы
+        from django.db.models import Sum, Count, Q
         stats = Organization.objects.annotate(
-            orders_count=Count('services__order', filter=Q(services__order__is_paid=True)),
-            total_sum=Sum('services__order__service__price', filter=Q(services__order__is_paid=True))
+            orders_count=Count('services__order', filter=Q(services__order__is_paid=True), distinct=True),
+            total_sum=Sum('services__price', filter=Q(services__order__is_paid=True))
         ).values('name', 'orders_count', 'total_sum')
         
         return [
