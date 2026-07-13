@@ -136,8 +136,7 @@ class OrgOrdersView(generics.ListAPIView):
     permission_classes = [IsOrgOwner]
 
     def get_queryset(self):
-        # Только оплаченные заказы на услуги этой организации
-        return Order.objects.filter(
-            service__organization__owner=self.request.user, 
+         return Order.objects.filter(
+            services__organization__owner=self.request.user, 
             is_paid=True
-        )    
+        ).distinct()
