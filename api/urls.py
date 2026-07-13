@@ -9,6 +9,7 @@ from .views import MyOrganizationView, MyServicesViewSet, OrgOrdersView
 router = DefaultRouter()
 router.register(r'organizations', OrganizationViewSet)
 router.register(r'orders', OrderViewSet, basename='order')
+router.register(r'my-services', MyServicesViewSet, basename='my-services')
 
 urlpatterns = [
     path('', include(router.urls)),
