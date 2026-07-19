@@ -1,65 +1,87 @@
 from rest_framework import serializers
-from .models import User, Organization, Service, Order
+from .models import User, Organization, OrganizationImage, Service, ServiceImage, Order, OrderItem, \
+    OrganizationSubmission
 
-# 1. Сериализатор услуг
+
+class ServiceImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServiceImage
+        fields = ['id', 'image']
+
+
+class OrganizationBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ['id', 'name', 'org_type']
+
+
 class ServiceSerializer(serializers.ModelSerializer):
-    category = serializers.CharField(source='organization.get_org_type_display', read_only=True)
-    orgName = serializers.CharField(source='organization.name', read_only=True)
-    serviceName = serializers.CharField(source='name', read_only=True)
-    detail = serializers.CharField(source='description', read_only=True)
-    qty = serializers.IntegerField(default=1, read_only=True) # Заглушка, если фронту нужно поле qty
+    organization_details = OrganizationBriefSerializer(source='organization', read_only=True)
+    gallery = ServiceImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Service
-        fields = ['id', 'category', 'orgName', 'serviceName', 'detail', 'price', 'image', 'qty']
+        fields = [
+            'id', 'organization', 'organization_details', 'category',
+            'name', 'description', 'price', 'image', 'gallery',
+            'capacity', 'amenities',
+            'date_start', 'date_end', 'itinerary', 'included',
+        ]
 
-# 2. Сериализатор организации
+
+class OrganizationImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrganizationImage
+        fields = ['id', 'image']
+
+
 class OrganizationSerializer(serializers.ModelSerializer):
     services = ServiceSerializer(many=True, read_only=True)
+    gallery = OrganizationImageSerializer(many=True, read_only=True)
+
     class Meta:
         model = Organization
         fields = '__all__'
 
-# 3. Сериализатор профиля (с полем is_staff для фронтенда)
+
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'gender', 'age', 'country', 'city', 'email', 'phone', 'role', 'is_staff']
         read_only_fields = ['role', 'is_staff']
 
-# 4. Сериализатор заказов 
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    service_details = ServiceSerializer(source='service', read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'service', 'service_details', 'qty', 'is_redeemed']
+        read_only_fields = ['is_redeemed']
+
+
 class OrderSerializer(serializers.ModelSerializer):
-    items = ServiceSerializer(source='services', many=True, read_only=True)
-    
-    date = serializers.SerializerMethodField()
-    time = serializers.SerializerMethodField()
+    items = OrderItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'date', 'time', 'is_paid', 'promo_code', 'items', 'services']
-        extra_kwargs = {
-            'services': {'write_only': True}
-        }
+        fields = ['id', 'user', 'items', 'created_at', 'is_paid', 'promo_code']
+        read_only_fields = ['user', 'items', 'is_paid', 'promo_code']
 
-    def get_date(self, obj):
-        return obj.created_at.strftime('%d.%m.%Y')
 
-    def get_time(self, obj):
-        return obj.created_at.strftime('%H:%M')
+class OrganizationSubmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrganizationSubmission
+        fields = '__all__'
+        read_only_fields = ['organization', 'submitted_by', 'status', 'admin_comment', 'created_at', 'reviewed_at']
 
-    # Валидация на 5 услуг, как просили в макете
-    def validate_services(self, value):
-        if len(value) > 5:
-            raise serializers.ValidationError("В один заказ нельзя добавить больше 5 услуг.")
-        return value
 
-# 5. Статистика для админа
 class AdminStatSerializer(serializers.Serializer):
     org_name = serializers.CharField()
     orders_count = serializers.IntegerField()
     total_sum = serializers.DecimalField(max_digits=12, decimal_places=2)
 
-# 6. Регистрация
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
@@ -67,8 +89,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'password', 'email', 'role', 'first_name', 'last_name']
 
+    def validate_role(self, value):
+        if value not in ('buyer', 'org'):
+            raise serializers.ValidationError(
+                "Через регистрацию можно завести только 'Покупателя' или 'Организацию'."
+            )
+        return value
+
     def create(self, validated_data):
-        user = User.objects.create_user(
+        return User.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
             email=validated_data.get('email', ''),
@@ -76,4 +105,3 @@ class RegisterSerializer(serializers.ModelSerializer):
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
         )
-        return user
