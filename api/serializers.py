@@ -1,6 +1,7 @@
 from rest_framework import serializers
+from django.db.models import Avg
 from .models import User, Organization, OrganizationImage, Service, ServiceImage, Order, OrderItem, \
-    OrganizationSubmission
+    OrganizationSubmission, Review
 
 
 class ServiceImageSerializer(serializers.ModelSerializer):
@@ -38,10 +39,19 @@ class OrganizationImageSerializer(serializers.ModelSerializer):
 class OrganizationSerializer(serializers.ModelSerializer):
     services = ServiceSerializer(many=True, read_only=True)
     gallery = OrganizationImageSerializer(many=True, read_only=True)
+    rating_avg = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Organization
         fields = '__all__'
+
+    def get_rating_avg(self, obj):
+        avg = obj.reviews.filter(status='approved').aggregate(avg=Avg('rating'))['avg']
+        return round(avg, 1) if avg else None
+
+    def get_reviews_count(self, obj):
+        return obj.reviews.filter(status='approved').count()
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -80,6 +90,7 @@ class AdminStatSerializer(serializers.Serializer):
     org_name = serializers.CharField()
     orders_count = serializers.IntegerField()
     total_sum = serializers.DecimalField(max_digits=12, decimal_places=2)
+    avg_rating = serializers.FloatField(allow_null=True)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -105,3 +116,17 @@ class RegisterSerializer(serializers.ModelSerializer):
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
         )
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user_name = serializers.SerializerMethodField()
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
+
+    class Meta:
+        model = Review
+        fields = ['id', 'organization', 'organization_name', 'user', 'user_name', 'rating', 'text', 'status', 'created_at']
+        read_only_fields = ['user', 'status', 'created_at']
+
+    def get_user_name(self, obj):
+        full = f"{obj.user.first_name} {obj.user.last_name}".strip()
+        return full or obj.user.username
