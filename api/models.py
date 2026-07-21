@@ -1,7 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 import uuid
+from django.core.validators import RegexValidator
 
+# Валидатор проверяет, что номер начинается с + или цифры и содержит от 7 до 15 цифр
+phone_regex = RegexValidator(
+    regex=r'^\+?1?\d{9,15}$',
+    message="Номер телефона должен быть в формате: '+999999999'. От 9 до 15 цифр."
+)
 
 class User(AbstractUser):
     ROLE_CHOICES = (
@@ -10,7 +16,7 @@ class User(AbstractUser):
         ('admin', 'Администратор'),
     )
     role = models.CharField("Роль", max_length=10, choices=ROLE_CHOICES, default='buyer')
-    phone = models.CharField("Телефон", max_length=20, blank=True, null=True)
+    phone = models.CharField("Телефон", max_length=20, validators=[phone_regex], blank=True, null=True)
     age = models.PositiveIntegerField("Возраст", blank=True, null=True)
     gender = models.CharField("Пол", max_length=10, choices=(('male', 'Мужской'), ('female', 'Женский')), blank=True)
     country = models.CharField("Страна", max_length=100, blank=True)
@@ -41,7 +47,7 @@ class Organization(models.Model):
     latitude = models.DecimalField("Широта", max_digits=9, decimal_places=6, blank=True, null=True)
     longitude = models.DecimalField("Долгота", max_digits=9, decimal_places=6, blank=True, null=True)
 
-    phone = models.CharField("Телефон организации", max_length=20)
+    phone = models.CharField("Телефон организации", max_length=20, validators=[phone_regex])
     working_hours = models.CharField("Время работы", max_length=100, blank=True)
     is_verified = models.BooleanField("Подтверждено админом (Модерация)", default=False)
     image = models.ImageField("Главное фото", upload_to='orgs/', blank=True, null=True)
@@ -76,7 +82,7 @@ class OrganizationSubmission(models.Model):
     address = models.CharField("Адрес", max_length=255)
     latitude = models.DecimalField("Широта", max_digits=9, decimal_places=6, blank=True, null=True)
     longitude = models.DecimalField("Долгота", max_digits=9, decimal_places=6, blank=True, null=True)
-    phone = models.CharField("Телефон организации", max_length=20)
+    phone = models.CharField("Телефон организации", max_length=20, validators=[phone_regex])
     working_hours = models.CharField("Время работы", max_length=100, blank=True)
     image = models.ImageField("Главное фото", upload_to='org_submissions/', blank=True, null=True)
     perks = models.JSONField("Преференции для клиентов платформы", default=list, blank=True)
